@@ -4,6 +4,8 @@ from construct import *
 
 _ALIGN = 4
 
+_DEBUG = False
+
 def get_parsed_size(tp,con):
     return len(tp.build(con))
 
@@ -118,18 +120,34 @@ def parse_stream(stream):
     files = [] # array of files (non unique)
     Names = stream.read(end - stream.tell())
 
+    if _DEBUG:
+        print 'len(Names): ', len(Names) # 3013624
+        print 'len(Names)/4: ', len(Names)/4
+        print 'len(NameRef): ', len(NameRef) # 160
+        print 'fileIndex.cMod (i): ', fileIndex.cMod # 2282
+        print 'len(modStart): ', len(modStart) # 2282
+        print 'len(cRefCnt): ', len(cRefCnt) # 2282
+
+    skipped_names = 0
+    lenNameRef = len(NameRef)
     for i in xrange(0, fileIndex.cMod):
         these = []
-        for j in xrange(modStart[i], modStart[i]+cRefCnt[i]):
-            # FIXME: probably this is incorrect
-            if j > len(NameRef):
-                print i, j, modStart[i], modStart[i]+cRefCnt[i]
-                break
-
+        for j in xrange(modStart[i], modStart[i] + cRefCnt[i]):
+            if j >= lenNameRef:
+                if _DEBUG:
+                    print "IPL: Warning - out of bound access to NameRef, index {}, NameRef length: {}".format(j, lenNameRef)
+                    print "IPL: ... modStart[i] = {}, cRefCnt[i] = {}".format(modStart[i], cRefCnt[i])
+                skipped_names += 1
+                if skipped_names > 10:
+                    break
+                continue
             Name = CString("Name").parse(Names[NameRef[j]:])
             files.append(Name)
             these.append(Name)
         modules.append(these)
+
+    if _DEBUG:
+        print "IPL: {} skipped names".format(skipped_names)
 
     #stream.seek(dbihdr.filinfSize, 1)
     # "TSM"

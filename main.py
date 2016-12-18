@@ -12,11 +12,11 @@ import idautils
 import idaapi
 import idc
 
-from pdbparse.symlookup import Lookup
-
+import pdbparse.symlookup
+idaapi.require('pdbparse.symlookup')
 
 __author__ = 'Arthur Gerkis'
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
 
 class Plugin(object):
@@ -34,7 +34,7 @@ class Plugin(object):
         self.image_base = idaapi.get_imagebase()
 
         print "IPL: Loading PDB data, might take a while..."
-        self.PDBLookup = Lookup([(self.symbol_path, self.image_base)])
+        self.PDBLookup = pdbparse.symlookup.Lookup([(self.symbol_path, self.image_base)])
 
         if not self.PDBLookup:
             print "IPL: PDBLookup failed to initialize, exiting."
